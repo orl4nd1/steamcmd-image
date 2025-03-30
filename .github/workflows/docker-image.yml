@@ -1,0 +1,32 @@
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - main  # Se ejecutará cuando hagas push a la rama 'main'
+  workflow_dispatch:  # Permite ejecutar el workflow manualmente desde GitHub
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Construir y etiquetar la imagen
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/steamcmd-custom:latest .
+          docker tag ghcr.io/${{ github.repository_owner }}/steamcmd-custom:latest ghcr.io/${{ github.repository_owner }}/steamcmd-custom:${{ github.sha }}
+
+      - name: Subir la imagen a GHCR
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/steamcmd-custom:latest
+          docker push ghcr.io/${{ github.repository_owner }}/steamcmd-custom:${{ github.sha }}
